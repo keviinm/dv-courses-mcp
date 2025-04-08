@@ -38,14 +38,19 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "-----BEGIN RSA PRIVATE KEY-----" > ~/.ssh/lightsail_key
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | sed 's/ /\n/g' >> ~/.ssh/lightsail_key
-          echo "-----END RSA PRIVATE KEY-----" >> ~/.ssh/lightsail_key
+          # Create a temporary file with the key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/temp_key
+          # Convert the key to the correct format
+          ssh-keygen -p -f ~/.ssh/temp_key -m pem -N ""
+          # Move the converted key to the final location
+          mv ~/.ssh/temp_key ~/.ssh/lightsail_key
           chmod 600 ~/.ssh/lightsail_key
+          
+          # Add the server to known hosts
           ssh-keyscan -H ${{ env.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
           
-          # Test SSH connection
-          ssh -i ~/.ssh/lightsail_key -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} 'echo "SSH connection successful"'
+          # Test SSH connection with verbose output
+          ssh -v -i ~/.ssh/lightsail_key -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} 'echo "SSH connection successful"'
 
       - name: Copy files to Lightsail
         run: |
@@ -72,13 +77,13 @@ jobs:
           ls -la mcp-service.service
           ls -la deploy.sh
 
-          # Copy files to Lightsail
-          scp -i ~/.ssh/lightsail_key \
+          # Copy files to Lightsail with verbose output
+          scp -v -i ~/.ssh/lightsail_key \
             target/courses-0.0.1-SNAPSHOT.jar \
             mcp-service.service \
             deploy.sh \
             ubuntu@${{ env.LIGHTSAIL_IP }}:~/
 
           # Execute deployment script
-          ssh -i ~/.ssh/lightsail_key \
+          ssh -v -i ~/.ssh/lightsail_key \
             ubuntu@${{ env.LIGHTSAIL_IP }} 'bash ~/deploy.sh' 
