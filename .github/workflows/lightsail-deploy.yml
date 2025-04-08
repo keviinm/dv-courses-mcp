@@ -1,0 +1,64 @@
+name: Deploy to AWS Lightsail
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-west-2
+  LIGHTSAIL_INSTANCE: your-instance-name
+  LIGHTSAIL_IP: your-instance-ip
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: ./mvnw clean package -DskipTests
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Copy files to Lightsail
+        run: |
+          # Create deployment script
+          cat > deploy.sh << 'EOL'
+          #!/bin/bash
+          sudo apt-get update
+          sudo apt install -y openjdk-17-jdk
+          sudo mkdir -p /home/ubuntu/app
+          sudo cp mcp-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
+          sudo cp mcp-service.service /etc/systemd/system/
+          sudo chown -R ubuntu:ubuntu /home/ubuntu/app
+          sudo systemctl daemon-reload
+          sudo systemctl enable mcp-service
+          sudo systemctl restart mcp-service
+          EOL
+
+          # Make script executable
+          chmod +x deploy.sh
+
+          # Copy files to Lightsail
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} \
+            target/mcp-0.0.1-SNAPSHOT.jar \
+            mcp-service.service \
+            deploy.sh \
+            ubuntu@${{ env.LIGHTSAIL_IP }}:~/
+
+          # Execute deployment script
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} \
+            ubuntu@${{ env.LIGHTSAIL_IP }} 'bash ~/deploy.sh' 
