@@ -41,9 +41,27 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Create and set permissions for the key file
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/lightsail_key
+          # Create the key file with proper format
+          cat > ~/.ssh/lightsail_key << 'EOL'
+          -----BEGIN RSA PRIVATE KEY-----
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          -----END RSA PRIVATE KEY-----
+          EOL
+          
+          # Set correct permissions
           chmod 600 ~/.ssh/lightsail_key
+          
+          # Debug: Show key file content (first few lines only)
+          echo "Key file content (first 5 lines):"
+          head -n 5 ~/.ssh/lightsail_key
+          
+          # Debug: Show key file permissions
+          echo "Key file permissions:"
+          ls -la ~/.ssh/lightsail_key
+          
+          # Debug: Try to validate the key
+          echo "Validating key format:"
+          ssh-keygen -l -f ~/.ssh/lightsail_key || true
           
           # Add the server to known hosts
           ssh-keyscan -H ${{ env.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
