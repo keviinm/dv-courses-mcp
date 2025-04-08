@@ -24,7 +24,9 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: ./mvnw clean package -DskipTests
+        run: |
+          ./mvnw clean package -DskipTests
+          ls -la target/  # List contents of target directory for debugging
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -59,9 +61,15 @@ jobs:
           # Make script executable
           chmod +x deploy.sh
 
+          # List files to be copied for debugging
+          echo "Files to be copied:"
+          ls -la target/*.jar
+          ls -la mcp-service.service
+          ls -la deploy.sh
+
           # Copy files to Lightsail
           scp -i ~/.ssh/lightsail_key \
-            target/mcp-0.0.1-SNAPSHOT.jar \
+            target/*.jar \
             mcp-service.service \
             deploy.sh \
             ubuntu@${{ env.LIGHTSAIL_IP }}:~/
