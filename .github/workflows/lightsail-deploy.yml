@@ -41,19 +41,27 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Create the key file with proper format
-          cat > ~/.ssh/lightsail_key << 'EOL'
-          -----BEGIN RSA PRIVATE KEY-----
-          ${{ secrets.SSH_PRIVATE_KEY }}
-          -----END RSA PRIVATE KEY-----
-          EOL
+          # Create temporary key file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/temp_key
+          chmod 600 ~/.ssh/temp_key
           
-          # Set correct permissions
-          chmod 600 ~/.ssh/lightsail_key
+          # Debug: Show original key content
+          echo "Original key content:"
+          cat ~/.ssh/temp_key
           
-          # Debug: Show key file content (first few lines only)
-          echo "Key file content (first 5 lines):"
-          head -n 5 ~/.ssh/lightsail_key
+          # Convert key to proper format
+          ssh-keygen -p -f ~/.ssh/temp_key -m pem -N "" || true
+          
+          # Debug: Show converted key content
+          echo "Converted key content:"
+          cat ~/.ssh/temp_key
+          
+          # Move to final location
+          mv ~/.ssh/temp_key ~/.ssh/lightsail_key
+          
+          # Debug: Show final key content
+          echo "Final key content:"
+          cat ~/.ssh/lightsail_key
           
           # Debug: Show key file permissions
           echo "Key file permissions:"
