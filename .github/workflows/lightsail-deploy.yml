@@ -15,26 +15,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+      
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
-
+      
       - name: Build with Maven
         run: |
           ./mvnw clean package -DskipTests
           ls -la target/  # List contents of target directory for debugging
-
+      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
+      
       - name: Set up SSH
         run: |
           # Create .ssh directory with correct permissions
@@ -77,7 +77,7 @@ jobs:
           
           # Test SSH connection with verbose output
           ssh -v -i ~/.ssh/lightsail_key -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} 'echo "SSH connection successful"'
-
+      
       - name: Copy files to Lightsail
         run: |
           # Create deployment script
@@ -93,23 +93,23 @@ jobs:
           sudo systemctl enable mcp-service
           sudo systemctl restart mcp-service
           EOL
-
+          
           # Make script executable
           chmod +x deploy.sh
-
+          
           # List files to be copied for debugging
           echo "Files to be copied:"
           ls -la target/*.jar
           ls -la mcp-service.service
           ls -la deploy.sh
-
+          
           # Copy files to Lightsail with verbose output
           scp -v -i ~/.ssh/lightsail_key \
             target/courses-0.0.1-SNAPSHOT.jar \
             mcp-service.service \
             deploy.sh \
             ubuntu@${{ env.LIGHTSAIL_IP }}:~/
-
+          
           # Execute deployment script
           ssh -v -i ~/.ssh/lightsail_key \
-            ubuntu@${{ env.LIGHTSAIL_IP }} 'bash ~/deploy.sh' 
+            ubuntu@${{ env.LIGHTSAIL_IP }} 'bash ~/deploy.sh'
