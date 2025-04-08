@@ -33,6 +33,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/lightsail_key
+          chmod 600 ~/.ssh/lightsail_key
+          ssh-keyscan -H ${{ env.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+
       - name: Copy files to Lightsail
         run: |
           # Create deployment script
@@ -53,12 +60,12 @@ jobs:
           chmod +x deploy.sh
 
           # Copy files to Lightsail
-          scp -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} \
+          scp -i ~/.ssh/lightsail_key \
             target/mcp-0.0.1-SNAPSHOT.jar \
             mcp-service.service \
             deploy.sh \
             ubuntu@${{ env.LIGHTSAIL_IP }}:~/
 
           # Execute deployment script
-          ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} \
+          ssh -i ~/.ssh/lightsail_key \
             ubuntu@${{ env.LIGHTSAIL_IP }} 'bash ~/deploy.sh' 
