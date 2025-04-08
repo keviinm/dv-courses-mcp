@@ -7,8 +7,8 @@ on:
 
 env:
   AWS_REGION: us-west-2
-  LIGHTSAIL_INSTANCE: Ubuntu-1
-  LIGHTSAIL_IP: 54.218.190.225
+  LIGHTSAIL_INSTANCE: your-instance-name
+  LIGHTSAIL_IP: your-instance-ip
 
 jobs:
   deploy:
@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt install -y openjdk-17-jdk
           sudo mkdir -p /home/ubuntu/app
-          sudo cp mcp-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
+          sudo cp target/mcp-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
           sudo cp mcp-service.service /etc/systemd/system/
           sudo chown -R ubuntu:ubuntu /home/ubuntu/app
           sudo systemctl daemon-reload

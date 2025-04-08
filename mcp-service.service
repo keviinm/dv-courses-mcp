@@ -1,1 +1,17 @@
- 
+[Unit]
+Description=MCP Service
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/app
+ExecStart=/usr/bin/java -jar target/mcp-0.0.1-SNAPSHOT.jar
+SuccessExitStatus=143
+Restart=always
+Environment=AWS_ACCESS_KEY_ID=dummy
+Environment=AWS_SECRET_KEY=dummy
+Environment=AWS_REGION=us-west-2
+Environment=AWS_DYNAMODB_ENDPOINT=http://localhost:8000
+
+[Install]
+WantedBy=multi-user.target 

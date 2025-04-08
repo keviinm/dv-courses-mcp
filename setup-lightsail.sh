@@ -9,8 +9,11 @@ sudo apt install -y openjdk-17-jdk maven
 # Create application directory
 sudo mkdir -p /home/ubuntu/app
 
+# Build the application
+./mvnw clean package -DskipTests
+
 # Copy the JAR file to the application directory
-sudo cp mcp-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
+sudo cp target/mcp-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
 
 # Copy service file
 sudo cp mcp-service.service /etc/systemd/system/
@@ -25,4 +28,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable mcp-service
 
 # Start the service
-sudo systemctl restart mcp-service 
+sudo systemctl start mcp-service 
