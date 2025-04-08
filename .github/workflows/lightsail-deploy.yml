@@ -41,35 +41,9 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Create temporary key file
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/temp_key
-          chmod 600 ~/.ssh/temp_key
-          
-          # Debug: Show original key content
-          echo "Original key content:"
-          cat ~/.ssh/temp_key
-          
-          # Convert key to proper format
-          ssh-keygen -p -f ~/.ssh/temp_key -m pem -N "" || true
-          
-          # Debug: Show converted key content
-          echo "Converted key content:"
-          cat ~/.ssh/temp_key
-          
-          # Move to final location
-          mv ~/.ssh/temp_key ~/.ssh/lightsail_key
-          
-          # Debug: Show final key content
-          echo "Final key content:"
-          cat ~/.ssh/lightsail_key
-          
-          # Debug: Show key file permissions
-          echo "Key file permissions:"
-          ls -la ~/.ssh/lightsail_key
-          
-          # Debug: Try to validate the key
-          echo "Validating key format:"
-          ssh-keygen -l -f ~/.ssh/lightsail_key || true
+          # Write key directly without conversion, handling potential line ending issues
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/lightsail_key
+          chmod 600 ~/.ssh/lightsail_key
           
           # Add the server to known hosts
           ssh-keyscan -H ${{ env.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
