@@ -38,9 +38,14 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/lightsail_key
+          echo "-----BEGIN RSA PRIVATE KEY-----" > ~/.ssh/lightsail_key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | sed 's/ /\n/g' >> ~/.ssh/lightsail_key
+          echo "-----END RSA PRIVATE KEY-----" >> ~/.ssh/lightsail_key
           chmod 600 ~/.ssh/lightsail_key
           ssh-keyscan -H ${{ env.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+          
+          # Test SSH connection
+          ssh -i ~/.ssh/lightsail_key -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} 'echo "SSH connection successful"'
 
       - name: Copy files to Lightsail
         run: |
@@ -50,7 +55,7 @@ jobs:
           sudo apt-get update
           sudo apt install -y openjdk-17-jdk
           sudo mkdir -p /home/ubuntu/app
-          sudo cp mcp-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
+          sudo cp courses-0.0.1-SNAPSHOT.jar /home/ubuntu/app/
           sudo cp mcp-service.service /etc/systemd/system/
           sudo chown -R ubuntu:ubuntu /home/ubuntu/app
           sudo systemctl daemon-reload
@@ -69,7 +74,7 @@ jobs:
 
           # Copy files to Lightsail
           scp -i ~/.ssh/lightsail_key \
-            target/*.jar \
+            target/courses-0.0.1-SNAPSHOT.jar \
             mcp-service.service \
             deploy.sh \
             ubuntu@${{ env.LIGHTSAIL_IP }}:~/
