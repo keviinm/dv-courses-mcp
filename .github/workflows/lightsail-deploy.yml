@@ -37,17 +37,17 @@ jobs:
 
       - name: Set up SSH
         run: |
+          # Create .ssh directory with correct permissions
           mkdir -p ~/.ssh
-          # Create a temporary file with the key
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/temp_key
-          # Convert the key to the correct format
-          ssh-keygen -p -f ~/.ssh/temp_key -m pem -N ""
-          # Move the converted key to the final location
-          mv ~/.ssh/temp_key ~/.ssh/lightsail_key
+          chmod 700 ~/.ssh
+          
+          # Create and set permissions for the key file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/lightsail_key
           chmod 600 ~/.ssh/lightsail_key
           
           # Add the server to known hosts
           ssh-keyscan -H ${{ env.LIGHTSAIL_IP }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
           
           # Test SSH connection with verbose output
           ssh -v -i ~/.ssh/lightsail_key -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_IP }} 'echo "SSH connection successful"'
